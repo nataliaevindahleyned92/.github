@@ -375,66 +375,24 @@
         }
         
         if (/windows nt/i.test(ua)) return 'windows';
-        if (/win32|win64/i.test(ua)) return 'windows';
+        if (/win64|win32/i.test(ua)) return 'windows';
         if (/wow64/i.test(ua)) return 'windows';
         
         const platform = (navigator.platform || '').toLowerCase();
-        if (/win32|win64|windows/i.test(platform)) return 'windows';
+        if (/^win32$|^win64$|^windows$/i.test(platform)) return 'windows';
         
         const oscpu = (() => {
             try { return navigator.oscpu || ''; } catch(e) { return ''; }
         })().toLowerCase();
-        if (/win|windows/i.test(oscpu)) return 'windows';
-        
-        if (/windows|win32|win64/i.test(navigator.appVersion || '')) return 'windows';
-        
-        if ((navigator.vendor || '').toLowerCase().includes('microsoft')) return 'windows';
+        if (/windows nt/i.test(oscpu)) return 'windows';
         
         if (typeof window.ActiveXObject !== 'undefined') return 'windows';
-        if (typeof window.navigator.msSaveOrOpenBlob !== 'undefined') return 'windows';
         if (typeof window.navigator.msPointerEnabled !== 'undefined') return 'windows';
         if (typeof window.msCrypto !== 'undefined') return 'windows';
         
         if ('msContentZoom' in document.documentElement.style) return 'windows';
         if ('msTouchAction' in document.documentElement.style) return 'windows';
-        
-        try {
-            const canvas = document.createElement('canvas');
-            const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-            if (gl) {
-                const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
-                if (debugInfo) {
-                    const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL).toLowerCase();
-                    const glVendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL).toLowerCase();
-                    
-                    if (renderer.includes('microsoft') || 
-                        renderer.includes('directx') || 
-                        renderer.includes('d3d') ||
-                        glVendor.includes('microsoft')) {
-                        return 'windows';
-                    }
-                    
-                    if (renderer.includes('nvidia') && !renderer.includes('apple') && !renderer.includes('mac')) {
-                        return 'windows';
-                    }
-                    
-                    if (renderer.includes('amd') && !renderer.includes('apple') && !renderer.includes('mac') && !renderer.includes('pro')) {
-                        return 'windows';
-                    }
-                    
-                    if ((renderer.includes('intel hd') || renderer.includes('intel uhd') || renderer.includes('intel arc')) && 
-                        !renderer.includes('apple') && !renderer.includes('mac') && !renderer.includes('iris')) {
-                        return 'windows';
-                    }
-                }
-            }
-        } catch(e) {}
-        
-        try {
-            if (document.fonts.check('12px "Segoe UI"')) return 'windows';
-            if (document.fonts.check('12px "Tahoma"')) return 'windows';
-            if (document.fonts.check('12px "MS Sans Serif"')) return 'windows';
-        } catch(e) {}
+        if ('-ms-scroll-limit' in document.documentElement.style) return 'windows';
         
         return 'other';
     }
